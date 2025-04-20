@@ -1,7 +1,5 @@
-import torch
-import torch.nn as nn
-import torchvision.models as models
-from torchvision.models.densenet import DenseNet121_Weights
+import tensorflow as tf
+from tensorflow.keras.applications import DenseNet121
 
 def get_radimagenet_densenet121(num_classes=165):
     """
@@ -18,58 +16,28 @@ def get_radimagenet_densenet121(num_classes=165):
         num_classes (int): Number of output classes (default: 165 for RadImageNet)
     
     Returns:
-        torch.nn.Module: Modified DenseNet121 model
+        tf.keras.Model: Modified DenseNet121 model
     """
-    # Load the model with random weights
-    model = models.densenet121(weights=None)
-    
-    # Modify the classifier
-    num_features = model.classifier.in_features
-    model.classifier = nn.Sequential(
-        nn.Dropout(0.5),
-        nn.Linear(num_features, num_classes),
-        nn.Softmax(dim=1)
+    # Load the base DenseNet121 model
+    base_model = DenseNet121(
+        include_top=False,
+        weights=None,  # Use random initialization
+        input_shape=(224, 224, 3)
     )
     
-    # Verify the architecture
-    verify_architecture(model, num_classes)
+    # Add classification head
+    x = base_model.output
+    x = tf.keras.layers.GlobalAveragePooling2D()(x)
+    x = tf.keras.layers.Dropout(0.5)(x)
+    x = tf.keras.layers.Dense(num_classes)(x)
+    outputs = tf.keras.layers.Softmax()(x)
+    
+    # Create the final model
+    model = tf.keras.Model(inputs=base_model.input, outputs=outputs)
     
     return model
 
-def verify_architecture(model, expected_classes):
-    """
-    Verifies that the model architecture matches the requirements.
-    
-    Args:
-        model (torch.nn.Module): The model to verify
-        expected_classes (int): Expected number of output classes
-    
-    Raises:
-        ValueError: If the model architecture doesn't match requirements
-    """
-    # Check output layer
-    if not isinstance(model.classifier[-1], nn.Softmax):
-        raise ValueError("Final layer must be Softmax")
-    
-    # Check number of output features
-    if model.classifier[1].out_features != expected_classes:
-        raise ValueError(f"Model must have {expected_classes} output classes, "
-                        f"got {model.classifier[1].out_features}")
-    
-    # Check dropout layer
-    if not isinstance(model.classifier[0], nn.Dropout) or model.classifier[0].p != 0.5:
-        raise ValueError("Must have dropout layer with p=0.5 before final layer")
-
 if __name__ == "__main__":
     # Create and test the model
-    model = get_radimagenet_densenet121()
-    
-    # Print model summary
-    print(model)
-    
-    # Test forward pass
-    x = torch.randn(1, 3, 224, 224)
-    output = model(x)
-    print(f"Input shape: {x.shape}")
-    print(f"Output shape: {output.shape}")
-    print(f"Output sum (should be 1.0): {output.sum().item()}") 
+    model = get_radimagenet_densenet121(165)
+   

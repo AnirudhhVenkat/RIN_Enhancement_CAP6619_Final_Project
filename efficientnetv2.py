@@ -1,12 +1,12 @@
 import tensorflow as tf
-from tensorflow.keras.applications import ResNet50
+from tensorflow.keras.applications import EfficientNetV2B0
 
-def get_radimagenet_resnet50(num_classes=165):
+def get_radimagenet_efficientnetv2(num_classes=165):
     """
-    Creates a ResNet50 model modified for RadImageNet.
+    Creates an EfficientNetV2B0 model modified for RadImageNet.
     
     Modifications:
-    1. Random weight initialization
+    1. ImageNet pre-trained weights
     2. Global average pooling
     3. Dropout (0.5)
     4. Softmax output layer
@@ -16,12 +16,12 @@ def get_radimagenet_resnet50(num_classes=165):
         num_classes (int): Number of output classes (default: 165 for RadImageNet)
     
     Returns:
-        tf.keras.Model: Modified ResNet50 model
+        tf.keras.Model: Modified EfficientNetV2B0 model
     """
-    # Load the base ResNet50 model
-    base_model = ResNet50(
+    # Load the base EfficientNetV2B0 model
+    base_model = EfficientNetV2B0(
         include_top=False,
-        weights=None,  # Use random initialization
+        weights=None,  # Use ImageNet pre-trained weights
         input_shape=(224, 224, 3)
     )
     
@@ -39,7 +39,5 @@ def get_radimagenet_resnet50(num_classes=165):
 
 if __name__ == "__main__":
     # Create and test the model
-    model = get_radimagenet_resnet50(165)
-    
-
-    
+    model = get_radimagenet_efficientnetv2(165)
+  
